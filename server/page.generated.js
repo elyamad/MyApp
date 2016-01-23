@@ -96,12 +96,71 @@ module.exports =
 	var React = __webpack_require__(/*! react */ 1);
 	
 	var Application = React.createClass({displayName: 'Application',
+	
+		handleClientLoad: function() {
+			// Step 2: Reference the API key
+			gapi.client.setApiKey(apiKey);
+			window.setTimeout(checkAuth,1);
+		},
+	
+		checkAuth: function() {
+			gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+		},
+	
+		handleAuthResult: function(authResult) {
+			console.log(authResult);
+			var authorizeButton = document.getElementById('authorize-button');
+			if (authResult && !authResult.error) {
+				authorizeButton.style.visibility = 'hidden';
+				makeApiCall();
+			} else {
+				authorizeButton.style.visibility = '';
+				authorizeButton.onclick = handleAuthClick;
+			}
+		},
+	
+		handleAuthClick: function(event) {
+			// Step 3: get authorization to use private data
+			gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
+			return false;
+		},
+	
+		// Load the API and make an API call.  Display the results on the screen.
+		makeApiCall: function() {
+			// Step 4: Load the Google+ API
+			gapi.client.load('plus', 'v1').then(function() {
+				// Step 5: Assemble the API request
+				var request = gapi.client.plus.people.get({
+					'userId': 'me'
+				});
+				// Step 6: Execute the API request
+				request.then(function(resp) {
+					var heading = document.createElement('h4');
+					var image = document.createElement('img');
+					image.src = resp.result.image.url;
+					heading.appendChild(image);
+					heading.appendChild(document.createTextNode(resp.result.displayName));
+	
+					document.getElementById('content').appendChild(heading);
+				}, function(reason) {
+					console.log('Error: ' + reason.result.error.message);
+				});
+			});
+		},
 		render: function() {
-			__webpack_require__(/*! ./Application.css */ 4);
+			var clientId = '654523739383-6vltqp62tnsungcl9oqjvkssgm3lktmb.apps.googleusercontent.com';
+	
+			var apiKey = 'UTtEjVVLlcr51ctxgDLmUGEE';
+	
+			var scopes = 'https://www.googleapis.com/auth/plus.me';
+	
+			{this.handleClientLoad()}
+	
 			return (
 				React.DOM.div( {className:"application"}, 
-					React.DOM.h1(null, "Hello World !"),
-					React.DOM.pre(null, this.props.url)
+				React.DOM.button( {id:"authorize-button", style:"visibility"}, "Authorize"),
+				React.DOM.div( {id:"content"}
+				)
 				)
 			);
 		}
@@ -130,44 +189,6 @@ module.exports =
 	}
 	
 	exports.add = function() {}
-
-/***/ },
-/* 4 */
-/*!*****************************!*\
-  !*** ./app/Application.css ***!
-  \*****************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(/*! ./server/style-collector.js */ 3).add(__webpack_require__(/*! !./~/css-loader!./app/Application.css */ 5));
-	delete __webpack_require__.c[module.id];
-
-/***/ },
-/* 5 */
-/*!********************************************!*\
-  !*** ./~/css-loader!./app/Application.css ***!
-  \********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports =
-		".application {\n\tborder: 1px solid blue;\n\tbackground: url("+__webpack_require__(/*! ./image.png */ 7)+"), url("+__webpack_require__(/*! ./image.jpg */ 6)+");\n}";
-
-/***/ },
-/* 6 */
-/*!***********************!*\
-  !*** ./app/image.jpg ***!
-  \***********************/
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__.p + "59e68da5e8cbc0ba28bd706801d425ba.jpg"
-
-/***/ },
-/* 7 */
-/*!***********************!*\
-  !*** ./app/image.png ***!
-  \***********************/
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAlSURBVBhXYzix//nMm6+AJBAxAFkIDhD/X3cSiIBCUGUgyf3PAeejJoXynSD8AAAAAElFTkSuQmCC"
 
 /***/ }
 /******/ ])
